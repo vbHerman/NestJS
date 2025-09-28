@@ -1,0 +1,15 @@
+{
+  // 保存时自动格式化
+  "editor.formatOnSave": true,
+  // 保存时自动修复 ESLint 错误
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  // 默认使用 Prettier 作为格式化工具
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // 排除 node_modules 等目录在文件搜索中
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  }
+}
