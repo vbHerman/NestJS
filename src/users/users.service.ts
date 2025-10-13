@@ -1,5 +1,5 @@
 // src/users/users.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient, User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -34,5 +34,17 @@ export class UsersService {
   // 删除用户
   async remove(id: number): Promise<User> {
     return this.prisma.user.delete({ where: { id } });
+  }
+  async findFirstOrLast(isFirst: boolean): Promise<User> {
+    const orderBy = isFirst ? 'asc' : 'desc';
+    const result = await this.prisma.user.findMany({
+      orderBy: { id: orderBy }, // 动态排序
+      take: 1, // 只取1条
+    });
+    if (result.length === 0) {
+      throw new NotFoundException('暂无用户数据');
+    }
+
+    return result[0];
   }
 }

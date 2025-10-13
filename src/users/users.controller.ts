@@ -7,10 +7,12 @@ import {
   Patch,
   Param,
   Delete,
+  ParseBoolPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from '@prisma/client';
 
 @Controller('users') // 路由前缀：/users
 export class UsersController {
@@ -44,5 +46,17 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(+id);
+  }
+  /**
+   * 获取 ID 最小的第一个用户（新增接口）
+   * 访问路径：GET /users/first
+   */
+
+  @Get('extremes/:isFirst')
+  findFirstOrLast(
+    @Param('isFirst', ParseBoolPipe)
+    isFirst: boolean,
+  ): Promise<User> {
+    return this.usersService.findFirstOrLast(isFirst);
   }
 }
