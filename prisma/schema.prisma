@@ -7,15 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// prisma/schema.prisma
-model User {
-  id      Int      @id @default(autoincrement())
-  name    String
-  username String  @unique  // 用户名唯一
-  sex     String?  // 可选，值为 'male'/'female'/'other'
-  address String?
-  photo   String?  // 存储图片路径或 URL
-  password String
-  role    String   @default("USER") // @db.Check("role IN ('ADMIN', 'USER')")
+// 认证服务专用表
+model AuthCredential {
+  userId          String   @id @db.UniqueIdentifier
+  loginName       String   @unique @db.NVarChar(50)
+  passwordHash    String   @db.NVarChar(255)
+  salt            String   @db.NVarChar(50)
+  lastLoginIp     String?  @db.NVarChar(45)
+  lastLoginTime   DateTime? @db.DateTime
+  loginFailCount  Int      @default(0)
+  isLocked        Boolean  @default(false) @db.Bit
+  createdAt       DateTime @default(now()) @db.DateTime
+
+  // 关联到用户资料
+  userProfile     UserProfile?
 }
+
+// 用户服务专用表
+model UserProfile {
+  userId      String  @id @db.UniqueIdentifier
+  fullName    String? @db.NVarChar(100)
+  email       String? @db.NVarChar(100)
+  phone       String? @db.NVarChar(20)
+  avatarUrl   String? @db.NVarChar(500)
+  status      Int     @default(1) // 1正常 2禁用
+
+  // 关联到认证凭据
+  authCredential AuthCredential @relation(fields: [userId], references: [userId])
+}
+
+
 

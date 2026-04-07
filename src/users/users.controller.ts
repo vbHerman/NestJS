@@ -9,10 +9,11 @@ import {
   Delete,
   ParseBoolPipe,
 } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from '@prisma/client';
+import { UserProfile } from '@prisma/client';
 
 @Controller('users') // 路由前缀：/users
 export class UsersController {
@@ -30,33 +31,30 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  // GET /users/:id
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id); // 转换为数字类型
+  // GET /users/:userId
+  @Get(':userId')
+  findOne(@Param('userId') userId: string) {
+    return this.usersService.findOne(userId);
   }
 
-  // PATCH /users/:id
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  // PATCH /users/:userId
+  @Patch(':userId')
+  update(
+    @Param('userId') userId: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(userId, updateUserDto);
   }
 
-  // DELETE /users/:id
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  // DELETE /users/:userId
+  @Delete(':userId')
+  remove(@Param('userId') userId: string) {
+    return this.usersService.remove(userId);
   }
-  /**
-   * 获取 ID 最小的第一个用户（新增接口）
-   * 访问路径：GET /users/first
-   */
 
-  @Get('extremes/:isFirst')
-  findFirstOrLast(
-    @Param('isFirst', ParseBoolPipe)
-    isFirst: boolean,
-  ): Promise<User> {
-    return this.usersService.findFirstOrLast(isFirst);
+  // 微服务方法：获取用户状态
+  @MessagePattern({ cmd: 'get_user_status' })
+  async getUserStatus(@Payload() data: { userId: string }) {
+    return this.usersService.getUserStatus(data.userId);
   }
 }

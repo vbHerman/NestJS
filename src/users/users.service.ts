@@ -1,50 +1,58 @@
 // src/users/users.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, UserProfile } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   private prisma = new PrismaClient(); // 实例化 Prisma 客户端
 
-  // 创建用户
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    return this.prisma.user.create({ data: createUserDto });
+  // 创建用户资料
+  async create(createUserDto: CreateUserDto): Promise<UserProfile> {
+    return this.prisma.userProfile.create({
+      data: createUserDto,
+    });
   }
 
-  // 查询所有用户
-  async findAll(): Promise<User[]> {
-    return this.prisma.user.findMany();
+  // 根据用户ID查询用户资料
+  async findByUserId(userId: string): Promise<UserProfile | null> {
+    return this.prisma.userProfile.findUnique({ where: { userId } });
   }
 
-  // 查询单个用户（按 ID）
-  async findOne(id: number): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { id } });
+  // 查询所有用户资料
+  async findAll(): Promise<UserProfile[]> {
+    return this.prisma.userProfile.findMany();
   }
 
-  // 更新用户
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    return this.prisma.user.update({
-      where: { id },
+  // 查询单个用户资料（按 userId）
+  async findOne(userId: string): Promise<UserProfile | null> {
+    return this.prisma.userProfile.findUnique({ where: { userId } });
+  }
+
+  // 更新用户资料
+  async update(
+    userId: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserProfile> {
+    return this.prisma.userProfile.update({
+      where: { userId },
       data: updateUserDto,
     });
   }
 
-  // 删除用户
-  async remove(id: number): Promise<User> {
-    return this.prisma.user.delete({ where: { id } });
+  // 删除用户资料
+  async remove(userId: string): Promise<UserProfile> {
+    return this.prisma.userProfile.delete({ where: { userId } });
   }
-  async findFirstOrLast(isFirst: boolean): Promise<User> {
-    const orderBy = isFirst ? 'asc' : 'desc';
-    const result = await this.prisma.user.findMany({
-      orderBy: { id: orderBy }, // 动态排序
-      take: 1, // 只取1条
-    });
-    if (result.length === 0) {
-      throw new NotFoundException('暂无用户数据');
-    }
 
-    return result[0];
+  // 微服务方法：获取用户状态
+  async getUserStatus(userId: string) {
+    const user = await this.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+    return { userId: user.userId, status: user.status };
   }
 }
