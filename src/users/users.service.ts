@@ -4,15 +4,41 @@ import { PrismaClient, UserProfile } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UsersService {
-  private prisma = new PrismaClient(); // 实例化 Prisma 客户端
+  private prisma = new PrismaClient();
 
   // 创建用户资料
   async create(createUserDto: CreateUserDto): Promise<UserProfile> {
-    return this.prisma.userProfile.create({
-      data: createUserDto,
+    // 如果没有提供 userId，自动生成一个 UUID
+    const userId = createUserDto.userId || randomUUID();
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(createUserDto.password, salt);
+
+    return this.prisma.$transaction(async (tx) => {
+      // 先创建 AuthCredential 记录
+      await tx.authCredential.create({
+        data: {
+          userId,
+          loginName: createUserDto.loginName,
+          passwordHash,
+          salt,
+        },
+      });
+
+      // 然后创建 UserProfile 记录
+      return tx.userProfile.create({
+        data: {
+          userId,
+          fullName: createUserDto.fullName,
+          email: createUserDto.email,
+          phone: createUserDto.phone,
+          avatarUrl: createUserDto.avatarUrl,
+          status: createUserDto.status || 1,
+        },
+      });
     });
   }
 
